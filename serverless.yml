@@ -1,0 +1,65 @@
+# Welcome to Serverless!
+#
+
+service: geoip
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: us-west-2
+  stage: ${opt:stage, 'dev'}
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 'dynamodb:BatchGetItem'
+        - 'dynamodb:GetItem'
+      Resource:
+        - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
+  tracing:
+    apiGateway: true
+    lambda: true
+
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-python-requirements
+
+functions:
+  lookup:
+    handler: lookup.find
+    events:
+      - http:
+          path: ip/{ip}
+          method: get
+      - http:
+          path: ip
+          method: get
+
+resources:
+  Resources:
+    geoipCityLocations:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: geoip_city_locations_${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: geoname_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: geoname_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1000
+    geoipCityNlocksIp4:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: geoip_city_blocks_ip4_${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: network
+            AttributeType: S
+        KeySchema:
+          - AttributeName: network
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1000
+
