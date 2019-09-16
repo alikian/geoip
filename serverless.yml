@@ -10,19 +10,19 @@ provider:
   stage: ${opt:stage, 'dev'}
 #  iamManagedPolicies:
 #    - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-#    - arn:aws:iam::#{AWS::AccountId}:policy/service-role/DAXtoDynamoDBPolicy
   iamRoleStatements:
     - Effect: 'Allow'
       Action:
         - 'dax:GetItem'
         - 'dax:BatchGetItem'
         - 'dax:Query'
+        - 'dax:Scan'
         - 'dax:DefineAttributeList'
         - 'dax:DefineAttributeListId'
         - 'dax:DefineKeySchema'
         - 'dax:Endpoints'
       Resource:
-          - arn:aws:dynamodb:us-west-2::#{AWS::AccountId}:cache/*
+          - arn:aws:dax:us-west-2:#{AWS::AccountId}:cache/*
     - Effect: 'Allow'
       Action:
         - 'dynamodb:DescribeTable'
@@ -64,6 +64,7 @@ functions:
         - sg-1ea8316c
       subnetIds:
         - subnet-addf82d4
+        - subnet-e07f01ab
 
 resources:
   Resources:
@@ -93,4 +94,31 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1000
-
+    DaxIamRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:service.name}dax
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "dax.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: "${self:service.name}-dax"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DescribeTable
+                  Resource:
+                    - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
