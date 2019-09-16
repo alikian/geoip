@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "dependencies": {},
   "devDependencies": {
-    "serverless": "^1.50.0",
+    "serverless": "^1.52.0",
+    "serverless-iam-roles-per-function": "^2.0.2",
     "serverless-pseudo-parameters": "^2.4.0",
     "serverless-python-requirements": "^5.0.0"
   }

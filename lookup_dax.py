@@ -1,14 +1,20 @@
-import boto3
 from netaddr import *
 import json
+import amazondax
+import botocore.session
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
 patch_all()
-dynamodb = boto3.resource('dynamodb')
+
+session = botocore.session.get_session()
+endpoint = 'test2.ulsqhu.clustercfg.dax.usw2.cache.amazonaws.com:8111'
+dynamodb = amazondax.AmazonDaxClient(session, region_name='us-west-2', endpoints=[endpoint])
+print('Success')
 
 
 def find(event, context):
+    print('event')
 
     if event['pathParameters']:
         ip = event['pathParameters'].get('ip')
@@ -35,7 +41,9 @@ def find_subnets(ip, table):
     keys = []
     for supernet in reversed(supernets):
         keys.append({
-            'network': str(supernet.cidr)
+            'network': {
+                'S': str(supernet.cidr)
+            }
         })
     networks = {
         table:
@@ -49,12 +57,12 @@ def find_subnets(ip, table):
 
 
 def find_geoname(geoname_id, table):
-    geoname_table = dynamodb.Table(table)
 
-    result = geoname_table.get_item(
+    result = dynamodb.get_item(
         Key={
-            'geoname_id': geoname_id
-        }
+            'geoname_id':  geoname_id
+        },
+        TableName=table
     )
     return result['Item']
 

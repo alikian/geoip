@@ -8,11 +8,27 @@ provider:
   runtime: python3.7
   region: us-west-2
   stage: ${opt:stage, 'dev'}
+#  iamManagedPolicies:
+#    - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+#    - arn:aws:iam::#{AWS::AccountId}:policy/service-role/DAXtoDynamoDBPolicy
   iamRoleStatements:
     - Effect: 'Allow'
       Action:
-        - 'dynamodb:BatchGetItem'
+        - 'dax:GetItem'
+        - 'dax:BatchGetItem'
+        - 'dax:Query'
+        - 'dax:DefineAttributeList'
+        - 'dax:DefineAttributeListId'
+        - 'dax:DefineKeySchema'
+        - 'dax:Endpoints'
+      Resource:
+          - arn:aws:dynamodb:us-west-2::#{AWS::AccountId}:cache/*
+    - Effect: 'Allow'
+      Action:
+        - 'dynamodb:DescribeTable'
         - 'dynamodb:GetItem'
+        - 'dynamodb:BatchGetItem'
+        - 'dynamodb:Query'
       Resource:
         - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
   tracing:
@@ -22,6 +38,7 @@ provider:
 plugins:
   - serverless-pseudo-parameters
   - serverless-python-requirements
+#  - serverless-iam-roles-per-function
 
 functions:
   lookup:
@@ -33,6 +50,20 @@ functions:
       - http:
           path: ip
           method: get
+  lookup_dax:
+    handler: lookup_dax.find
+    events:
+      - http:
+          path: ip_dax/{ip}
+          method: get
+      - http:
+          path: ip_dax
+          method: get
+    vpc:
+      securityGroupIds:
+        - sg-1ea8316c
+      subnetIds:
+        - subnet-addf82d4
 
 resources:
   Resources:
