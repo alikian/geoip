@@ -8,29 +8,6 @@ provider:
   runtime: python3.7
   region: us-west-2
   stage: ${opt:stage, 'dev'}
-#  iamManagedPolicies:
-#    - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-  iamRoleStatements:
-    - Effect: 'Allow'
-      Action:
-        - 'dax:GetItem'
-        - 'dax:BatchGetItem'
-        - 'dax:Query'
-        - 'dax:Scan'
-        - 'dax:DefineAttributeList'
-        - 'dax:DefineAttributeListId'
-        - 'dax:DefineKeySchema'
-        - 'dax:Endpoints'
-      Resource:
-          - arn:aws:dax:us-west-2:#{AWS::AccountId}:cache/*
-    - Effect: 'Allow'
-      Action:
-        - 'dynamodb:DescribeTable'
-        - 'dynamodb:GetItem'
-        - 'dynamodb:BatchGetItem'
-        - 'dynamodb:Query'
-      Resource:
-        - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
   tracing:
     apiGateway: true
     lambda: true
@@ -38,7 +15,7 @@ provider:
 plugins:
   - serverless-pseudo-parameters
   - serverless-python-requirements
-#  - serverless-iam-roles-per-function
+  - serverless-iam-roles-per-function
 
 functions:
   lookup:
@@ -50,6 +27,15 @@ functions:
       - http:
           path: ip
           method: get
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - 'dynamodb:DescribeTable'
+          - 'dynamodb:GetItem'
+          - 'dynamodb:BatchGetItem'
+          - 'dynamodb:Query'
+        Resource:
+          - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
   lookup_dax:
     handler: lookup_dax.find
     events:
@@ -65,6 +51,19 @@ functions:
       subnetIds:
         - subnet-addf82d4
         - subnet-e07f01ab
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - 'dax:GetItem'
+          - 'dax:BatchGetItem'
+          - 'dax:Query'
+          - 'dax:Scan'
+          - 'dax:DefineAttributeList'
+          - 'dax:DefineAttributeListId'
+          - 'dax:DefineKeySchema'
+          - 'dax:Endpoints'
+        Resource:
+            - arn:aws:dax:us-west-2:#{AWS::AccountId}:cache/*
 
 resources:
   Resources:
