@@ -11,12 +11,9 @@ dynamodb = boto3.resource('dynamodb')
 
 def find(event, context):
     print(event)
-    print(context)
-
-    if event['pathParameters']:
-        ip = event['pathParameters'].get('ip')
-    else:
-        ip = event['requestContext']['identity']['sourceIp']
+    path = event['path']
+    ip = path[4:]
+    print(ip)
 
     ip_response = geoip.find_subnets(ip, 'geoip_city_blocks_ip4_dev')[0]
 
@@ -27,8 +24,9 @@ def find(event, context):
     response = {
         "statusCode": 200,
         "body": json.dumps(ip_response,
-                           cls=geoip.DecimalEncoder)
+                           cls=geoip.DecimalEncoder),
+        "headers": {
+            "Content-Type": "application/json"
+        },
     }
     return response
-
-

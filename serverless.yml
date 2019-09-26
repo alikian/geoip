@@ -11,6 +11,15 @@ provider:
   tracing:
     apiGateway: true
     lambda: true
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+        - xray:GetSamplingRules
+        - xray:GetSamplingTargets
+        - xray:GetSamplingStatisticSummaries
+      Resource: '*'
 
 plugins:
   - serverless-pseudo-parameters
@@ -27,6 +36,7 @@ functions:
       - http:
           path: ip
           method: get
+    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: 'Allow'
         Action:
@@ -36,34 +46,26 @@ functions:
           - 'dynamodb:Query'
         Resource:
           - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
-  lookup_dax:
-    handler: lookup_dax.find
+  lookup_alb:
+    handler: lookup_alb.find
     events:
-      - http:
-          path: ip_dax/{ip}
-          method: get
-      - http:
-          path: ip_dax
-          method: get
-    vpc:
-      securityGroupIds:
-        - sg-1ea8316c
-      subnetIds:
-        - subnet-addf82d4
-        - subnet-e07f01ab
+      - alb:
+          listenerArn: arn:aws:elasticloadbalancing:us-west-2:495224360068:listener/app/geoiplb/9d5151d3d4dfe7f6/f2c90efe2c70d73a
+          priority: 1
+          conditions:
+            path: /ip/*
+            method:
+              - GET
+    iamRoleStatementsInherit: true
     iamRoleStatements:
       - Effect: 'Allow'
         Action:
-          - 'dax:GetItem'
-          - 'dax:BatchGetItem'
-          - 'dax:Query'
-          - 'dax:Scan'
-          - 'dax:DefineAttributeList'
-          - 'dax:DefineAttributeListId'
-          - 'dax:DefineKeySchema'
-          - 'dax:Endpoints'
+          - 'dynamodb:DescribeTable'
+          - 'dynamodb:GetItem'
+          - 'dynamodb:BatchGetItem'
+          - 'dynamodb:Query'
         Resource:
-            - arn:aws:dax:us-west-2:#{AWS::AccountId}:cache/*
+          - arn:aws:dynamodb:us-west-2:#{AWS::AccountId}:table/geoip_city*
 
 resources:
   Resources:

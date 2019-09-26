@@ -1,4 +1,3 @@
 aws-xray-sdk
 netaddr
-amazon-dax-client
 requests
